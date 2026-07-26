@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/FloatingScoreLabel.cs" id="1_float"]
+
+[node name="FloatingScoreLabel" type="Label"]
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("1_float")

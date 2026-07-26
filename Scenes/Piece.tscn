@@ -6,3 +6,32 @@
 script = ExtResource("1_piece")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="SpecialIcon" type="Label" parent="."]
+visible = false
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ClearParticles" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 14
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.9
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 200)
+initial_velocity_min = 40.0
+initial_velocity_max = 90.0
+scale_amount_min = 0.5
+scale_amount_max = 1.2
+color = Color(1, 1, 1, 1)
+

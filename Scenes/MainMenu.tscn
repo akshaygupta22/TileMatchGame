@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/MainMenuUI.cs" id="1_menu"]
+[ext_resource type="Theme" path="res://Assets/UI/GameTheme.tres" id="2_theme"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("2_theme")
+script = ExtResource("1_menu")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 80.0
+offset_bottom = 140.0
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
+text = "Tile Match Game"
+
+[node name="ButtonList" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -90.0
+offset_right = 110.0
+offset_bottom = 90.0
+theme_override_constants/separation = 20
+
+[node name="ClassicButton" type="Button" parent="ButtonList"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(220, 48)
+text = "Classic"
+
+[node name="TimeAttackButton" type="Button" parent="ButtonList"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(220, 48)
+text = "Time Attack"
+
+[node name="EndlessButton" type="Button" parent="ButtonList"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(220, 48)
+text = "Endless"
+
+[node name="SubtitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 145.0
+offset_bottom = 175.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+text = "Pick a mode to start"

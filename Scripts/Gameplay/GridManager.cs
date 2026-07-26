@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using TileMatchGame.Data;
@@ -86,8 +87,8 @@ public partial class GridManager : Node2D
 
     private PieceType RandomPieceType()
     {
-        var values = Enum.GetValues<PieceType>();
-        return values[_random.Next(values.Length)];
+        var values = TileDatabase.GetActiveTypes(_gameManager?.CurrentTier ?? 1);
+        return values[_random.Next(values.Count)];
     }
 
     private Piece SpawnPiece(Vector2I gridPos, PieceType type)
@@ -186,8 +187,10 @@ public partial class GridManager : Node2D
     }
 
     /// <summary>
-    /// Swaps two adjacent tiles, tweening both into place. If the swap does not
-    /// create a match, they are tweened back to their original positions.
+    /// Swaps two adjacent tiles, tweening both into place. If either tile is a
+    /// special piece, its effect triggers unconditionally. Otherwise, if the
+    /// swap does not create a match, both tiles are tweened back to their
+    /// original positions.
     /// </summary>
     public async Task SwapTiles(Vector2I posA, Vector2I posB)
     {
@@ -199,6 +202,7 @@ public partial class GridManager : Node2D
             return;
         }
 
+        _gameManager?.PostSwapSound();
         await AnimateSwap(pieceA, pieceB, posB, posA);
 
         _grid[posA.X, posA.Y] = pieceB;
@@ -206,14 +210,23 @@ public partial class GridManager : Node2D
         pieceA.GridPosition = posB;
         pieceB.GridPosition = posA;
 
-        var matches = MatchFinder.CheckBoardMatches(_grid, Width, Height);
+        if (pieceA.SpecialKind != SpecialPieceKind.None || pieceB.SpecialKind != SpecialPieceKind.None)
+        {
+            _gameManager?.UseMove();
+            _gameManager?.PostStatus("Special piece activated!");
+            await TriggerSpecialEffectsAsync(pieceA, pieceB);
+            return;
+        }
 
-        if (matches.Count == 0)
+        var scan = MatchFinder.ScanBoard(_grid, Width, Height, posA, posB);
+
+        if (scan.MatchedCells.Count == 0)
         {
             // No match: flash red and reverse the swap.
             pieceA.FlashInvalid();
             pieceB.FlashInvalid();
             _gameManager?.PostStatus("No match — swap reverted.");
+            _gameManager?.PostInvalidSound();
             await AnimateSwap(pieceA, pieceB, posA, posB);
             _grid[posA.X, posA.Y] = pieceA;
             _grid[posB.X, posB.Y] = pieceB;
@@ -224,7 +237,81 @@ public partial class GridManager : Node2D
 
         _gameManager?.UseMove();
         _gameManager?.PostStatus("Match found!");
-        await ResolveMatchesAsync(matches);
+        await ResolveMatchesAsync(scan.MatchedCells, scan.SpecialSpawns);
+    }
+
+    /// <summary>
+    /// Resolves the effect(s) of one or two special pieces involved in a swap:
+    /// clears the affected row/column/color, awards a bonus-scored clear, then
+    /// cascades normally afterward.
+    /// </summary>
+    private async Task TriggerSpecialEffectsAsync(Piece pieceA, Piece pieceB)
+    {
+        var cells = new HashSet<Vector2I>();
+
+        if (pieceA.SpecialKind != SpecialPieceKind.None)
+        {
+            cells.UnionWith(GetSpecialEffectCells(pieceA.GridPosition, pieceA.SpecialKind, pieceB.Type));
+        }
+
+        if (pieceB.SpecialKind != SpecialPieceKind.None)
+        {
+            cells.UnionWith(GetSpecialEffectCells(pieceB.GridPosition, pieceB.SpecialKind, pieceA.Type));
+        }
+
+        await ShakeBoardAsync();
+        ClearMatchedPieces(cells.ToList(), chainIndex: 1, scoreMultiplier: 2, specialSpawns: null);
+        await ApplyGravityAndRefillAsync();
+    }
+
+    /// <summary>Returns every cell a special piece's effect should clear.</summary>
+    private HashSet<Vector2I> GetSpecialEffectCells(Vector2I pos, SpecialPieceKind kind, PieceType partnerType)
+    {
+        var cells = new HashSet<Vector2I> { pos };
+
+        switch (kind)
+        {
+            case SpecialPieceKind.LineClearRow:
+                for (int x = 0; x < Width; x++)
+                {
+                    cells.Add(new Vector2I(x, pos.Y));
+                }
+                break;
+            case SpecialPieceKind.LineClearCol:
+                for (int y = 0; y < Height; y++)
+                {
+                    cells.Add(new Vector2I(pos.X, y));
+                }
+                break;
+            case SpecialPieceKind.ColorBomb:
+                for (int x = 0; x < Width; x++)
+                {
+                    for (int y = 0; y < Height; y++)
+                    {
+                        if (_grid[x, y] != null && _grid[x, y].Type == partnerType)
+                        {
+                            cells.Add(new Vector2I(x, y));
+                        }
+                    }
+                }
+                break;
+        }
+
+        return cells;
+    }
+
+    /// <summary>Briefly jitters the board's position to sell big combos/effects.</summary>
+    private async Task ShakeBoardAsync()
+    {
+        var origin = Position;
+        var tween = CreateTween();
+        for (int i = 0; i < 4; i++)
+        {
+            var offset = new Vector2(_random.Next(-6, 7), _random.Next(-6, 7));
+            tween.TweenProperty(this, "position", origin + offset, 0.04);
+        }
+        tween.TweenProperty(this, "position", origin, 0.04);
+        await ToSignal(tween, Tween.SignalName.Finished);
     }
 
     private async Task AnimateSwap(Piece pieceA, Piece pieceB, Vector2I targetForA, Vector2I targetForB)
@@ -236,17 +323,22 @@ public partial class GridManager : Node2D
         await ToSignal(tween, Tween.SignalName.Finished);
     }
 
-    private async Task ResolveMatchesAsync(List<Vector2I> matches)
+    private async Task ResolveMatchesAsync(List<Vector2I> matches, List<SpecialSpawn> specialSpawns)
     {
-        ClearMatchedPieces(matches);
+        ClearMatchedPieces(matches, chainIndex: 1, scoreMultiplier: 1, specialSpawns: specialSpawns);
         await ApplyGravityAndRefillAsync();
     }
 
-    private void ClearMatchedPieces(List<Vector2I> matches)
+    private void ClearMatchedPieces(List<Vector2I> cellsToClear, int chainIndex, int scoreMultiplier = 1, List<SpecialSpawn> specialSpawns = null)
     {
         int scoreGained = 0;
+        Vector2 centroid = Vector2.Zero;
+        int count = 0;
+        var spawnPositions = specialSpawns != null
+            ? new HashSet<Vector2I>(specialSpawns.Select(s => s.Position))
+            : null;
 
-        foreach (var pos in matches)
+        foreach (var pos in cellsToClear)
         {
             var piece = _grid[pos.X, pos.Y];
             if (piece == null)
@@ -254,39 +346,138 @@ public partial class GridManager : Node2D
                 continue;
             }
 
-            scoreGained += piece.Data?.ScoreValue ?? 10;
+            centroid += piece.Position;
+            count++;
+
+            if (spawnPositions != null && spawnPositions.Contains(pos))
+            {
+                // This cell becomes a special piece instead of being cleared.
+                continue;
+            }
+
+            scoreGained += (piece.Data?.ScoreValue ?? 10) * scoreMultiplier;
             _grid[pos.X, pos.Y] = null;
+            piece.PlayClearEffect(this);
             piece.QueueFree();
+        }
+
+        if (specialSpawns != null)
+        {
+            foreach (var spawn in specialSpawns)
+            {
+                _grid[spawn.Position.X, spawn.Position.Y]?.SetSpecialKind(spawn.Kind);
+            }
         }
 
         if (scoreGained > 0)
         {
             _gameManager?.AddScore(scoreGained);
             _gameManager?.PostStatus($"+{scoreGained} points!");
+            _gameManager?.PostScorePopup(centroid / Math.Max(1, count), scoreGained);
+
+            if (chainIndex > 1)
+            {
+                _gameManager?.PostCombo(chainIndex);
+            }
         }
     }
 
     /// <summary>
     /// Shifts remaining pieces down into empty slots, spawns new pieces above
     /// the board for empty top slots, and loops until no new matches exist.
+    /// Tracks cascade chain depth for combo feedback and shakes the board on
+    /// long chains.
     /// </summary>
     public async Task ApplyGravityAndRefillAsync()
     {
         bool cascaded = true;
+        int chainIndex = 1;
 
         while (cascaded)
         {
             await CollapseAndRefillColumnsAsync();
 
-            var newMatches = MatchFinder.CheckBoardMatches(_grid, Width, Height);
-            if (newMatches.Count > 0)
+            var scan = MatchFinder.ScanBoard(_grid, Width, Height, null, null);
+            if (scan.MatchedCells.Count > 0)
             {
-                ClearMatchedPieces(newMatches);
+                chainIndex++;
+                ClearMatchedPieces(scan.MatchedCells, chainIndex, scoreMultiplier: 1, specialSpawns: scan.SpecialSpawns);
                 cascaded = true;
             }
             else
             {
                 cascaded = false;
+            }
+        }
+
+        if (chainIndex >= 3)
+        {
+            await ShakeBoardAsync();
+        }
+
+        EnsureBoardIsPlayable();
+    }
+
+    /// <summary>
+    /// Safety net: if no swap on the board could produce a match, reshuffle
+    /// tile types in place (up to a few attempts). If still stuck afterward,
+    /// reports the board as stuck (ends the current game).
+    /// </summary>
+    private void EnsureBoardIsPlayable()
+    {
+        if (MatchFinder.HasAnyPossibleMove(_grid, Width, Height))
+        {
+            return;
+        }
+
+        for (int attempt = 0; attempt < 20 && !MatchFinder.HasAnyPossibleMove(_grid, Width, Height); attempt++)
+        {
+            ReshuffleBoard();
+        }
+
+        if (!MatchFinder.HasAnyPossibleMove(_grid, Width, Height))
+        {
+            _gameManager?.ReportBoardStuck();
+        }
+        else
+        {
+            _gameManager?.PostStatus("Board reshuffled \u2014 no moves were available.");
+        }
+    }
+
+    private void ReshuffleBoard()
+    {
+        var types = new List<PieceType>();
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                if (_grid[x, y] != null)
+                {
+                    types.Add(_grid[x, y].Type);
+                }
+            }
+        }
+
+        // Fisher-Yates shuffle.
+        for (int i = types.Count - 1; i > 0; i--)
+        {
+            int j = _random.Next(i + 1);
+            (types[i], types[j]) = (types[j], types[i]);
+        }
+
+        int idx = 0;
+        for (int x = 0; x < Width; x++)
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                if (_grid[x, y] == null)
+                {
+                    continue;
+                }
+
+                var type = types[idx++];
+                _grid[x, y].Setup(type, _tileDatabase.GetTileData(type));
             }
         }
     }
