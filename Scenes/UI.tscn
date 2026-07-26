@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/ScoreUI.cs" id="1_ui"]
+
+[node name="UI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_ui")
+
+[node name="ScoreLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 40.0
+text = "Score: 0"
+
+[node name="MovesLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 48.0
+offset_right = 300.0
+offset_bottom = 72.0
+text = "Moves: 0"
+
+[node name="StatusLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 80.0
+offset_right = 460.0
+offset_bottom = 104.0
+text = ""
+
+[node name="WinLosePopup" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 200.0
+offset_top = 200.0
+offset_right = 400.0
+offset_bottom = 300.0
+
+[node name="ResultLabel" type="Label" parent="WinLosePopup"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 184.0
+offset_bottom = 40.0
+horizontal_alignment = 1
+text = "Result"

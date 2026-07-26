@@ -1,0 +1,10 @@
+namespace TileMatchGame.Data;
+
+public enum PieceType
+{
+    Red,
+    Blue,
+    Green,
+    Yellow,
+    Purple
+}
