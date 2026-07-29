@@ -22,6 +22,7 @@ config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
 TileDatabase="*res://Scripts/Utils/TileDatabase.cs"
 GameManager="*res://Scripts/Managers/GameManager.cs"
+SaveManager="*res://Scripts/Managers/SaveManager.cs"
 AudioManager="*res://Scripts/Managers/AudioManager.cs"
 
 [dotnet]

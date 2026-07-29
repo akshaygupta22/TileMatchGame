@@ -4,5 +4,13 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>TileMatchGame</RootNamespace>
     <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="TileMatchGame.Tests/**/*.cs" />
+    <EmbeddedResource Remove="TileMatchGame.Tests/**" />
+    <None Remove="TileMatchGame.Tests/**" />
+  </ItemGroup>
 </Project>

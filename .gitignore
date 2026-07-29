@@ -15,3 +15,22 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# Build outputs
+/bin/
+/obj/
+**/bin/
+**/obj/
+
+# Local test and tool output
+TestResults/
+*.coverage
+*.trx
+
+# VS Code / IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

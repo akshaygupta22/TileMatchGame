@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "baseTargetScore": 1000,
+  "startingMoves": 20,
+  "timeAttackSeconds": 90,
+  "tierScoreStep": 500,
+  "tierTimeBonusSeconds": 10,
+  "tierTargetMultiplier": 1.5
+}

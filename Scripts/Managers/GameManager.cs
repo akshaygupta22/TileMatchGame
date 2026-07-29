@@ -12,12 +12,15 @@ namespace TileMatchGame.Managers;
 /// </summary>
 public partial class GameManager : Node
 {
-    [Export] public int BaseTargetScore { get; set; } = 1000;
-    [Export] public int StartingMoves { get; set; } = 20;
-    [Export] public float TimeAttackSeconds { get; set; } = 90f;
-    [Export] public float TierScoreStep { get; set; } = 500f;
-    [Export] public float TierTimeBonusSeconds { get; set; } = 10f;
-    [Export] public float TierTargetMultiplier { get; set; } = 1.5f;
+    private const string BalancePath = "res://Config/game_balance.json";
+
+    public GameBalanceData BalanceData { get; private set; } = new();
+    public int BaseTargetScore { get; private set; }
+    public int StartingMoves { get; private set; }
+    public float TimeAttackSeconds { get; private set; }
+    public float TierScoreStep { get; private set; }
+    public float TierTimeBonusSeconds { get; private set; }
+    public float TierTargetMultiplier { get; private set; }
 
     public GameMode SelectedMode { get; private set; } = GameMode.Classic;
     public int CurrentScore { get; private set; }
@@ -37,11 +40,15 @@ public partial class GameManager : Node
     public event Action OnSwapSound;
     public event Action OnInvalidSound;
 
+    private SaveManager _saveManager;
     private bool _gameOver;
     private int _tierScoreBaseline;
 
     public override void _Ready()
     {
+        LoadBalanceData();
+        _saveManager = GetNodeOrNull<SaveManager>("/root/SaveManager");
+        _saveManager?.Load();
         StartNewGame(SelectedMode);
     }
 
@@ -59,6 +66,18 @@ public partial class GameManager : Node
         {
             EndGame(won: false);
         }
+    }
+
+    private void LoadBalanceData()
+    {
+        var resolvedPath = ProjectSettings.GlobalizePath(BalancePath);
+        BalanceData = GameBalanceData.LoadFromFile(resolvedPath);
+        BaseTargetScore = BalanceData.BaseTargetScore;
+        StartingMoves = BalanceData.StartingMoves;
+        TimeAttackSeconds = BalanceData.TimeAttackSeconds;
+        TierScoreStep = BalanceData.TierScoreStep;
+        TierTimeBonusSeconds = BalanceData.TierTimeBonusSeconds;
+        TierTargetMultiplier = BalanceData.TierTargetMultiplier;
     }
 
     /// <summary>Resets all run state for a fresh playthrough of the given mode. Call before changing to the Main scene.</summary>
@@ -186,6 +205,7 @@ public partial class GameManager : Node
     private void EndGame(bool won)
     {
         _gameOver = true;
+        _saveManager?.RecordRunResult(SelectedMode, CurrentScore, CurrentTier, won, StartingMoves - MovesRemaining, TimeRemaining);
         OnGameOver?.Invoke(won);
     }
 }
