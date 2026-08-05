@@ -10,87 +10,66 @@ namespace TileMatchGame.UI;
 /// </summary>
 public partial class MainMenuUI : Control
 {
+    private GameManager _gameManager;
+    private SaveManager _saveManager;
+
     public override void _Ready()
     {
-        var gameManager = GetNode<GameManager>("/root/GameManager");
-        var saveManager = GetNodeOrNull<SaveManager>("/root/SaveManager");
+        _gameManager = GetNode<GameManager>("/root/GameManager");
+        _saveManager = GetNodeOrNull<SaveManager>("/root/SaveManager");
 
-        GetNode<Button>("%ClassicButton").Pressed += () => StartGame(gameManager, GameMode.Classic);
-        GetNode<Button>("%TimeAttackButton").Pressed += () => StartGame(gameManager, GameMode.TimeAttack);
-        GetNode<Button>("%EndlessButton").Pressed += () => StartGame(gameManager, GameMode.Endless);
+        GetNode<Button>("%ClassicButton").Pressed += () => StartGame(GameMode.Classic);
+        GetNode<Button>("%TimeAttackButton").Pressed += () => StartGame(GameMode.TimeAttack);
+        GetNode<Button>("%EndlessButton").Pressed += () => StartGame(GameMode.Endless);
+        GetNode<Button>("%ResetProgressButton").Pressed += ResetProgress;
 
-        saveManager?.Load();
-        AddHighScoreSummary(saveManager);
+        _saveManager?.Load();
+        UpdateSummary();
     }
 
-    private void AddHighScoreSummary(SaveManager saveManager)
+    private void UpdateSummary()
     {
-        var panel = new PanelContainer
+        var summary = GetNodeOrNull<Label>("%SummaryLabel");
+        if (summary == null)
         {
-            Name = "HighScoreSummary",
-            CustomMinimumSize = new Vector2(280f, 120f)
-        };
-
-        panel.AnchorLeft = 0.5f;
-        panel.AnchorRight = 0.5f;
-        panel.AnchorTop = 1.0f;
-        panel.AnchorBottom = 1.0f;
-        panel.Position = new Vector2(-140f, -140f);
-
-        var margin = new MarginContainer
-        {
-            CustomMinimumSize = panel.CustomMinimumSize,
-            ThemeTypeVariation = "MarginContainer"
-        };
-        margin.AddThemeConstantOverride("margin_left", 16);
-        margin.AddThemeConstantOverride("margin_top", 12);
-        margin.AddThemeConstantOverride("margin_right", 16);
-        margin.AddThemeConstantOverride("margin_bottom", 12);
-
-        var content = new VBoxContainer
-        {
-            Alignment = BoxContainer.AlignmentMode.Center
-        };
-
-        var title = new Label
-        {
-            Text = "Local Best Scores",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            CustomMinimumSize = new Vector2(0f, 24f)
-        };
-
-        var body = new Label
-        {
-            Text = BuildHighScoreText(saveManager),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.Word,
-            Modulate = new Color(0.95f, 0.95f, 0.95f)
-        };
-
-        content.AddChild(title);
-        content.AddChild(body);
-        margin.AddChild(content);
-        panel.AddChild(margin);
-        AddChild(panel);
-    }
-
-    private string BuildHighScoreText(SaveManager saveManager)
-    {
-        if (saveManager == null)
-        {
-            return "No local progress yet.";
+            return;
         }
 
-        var classic = saveManager.GetHighScore(GameMode.Classic);
-        var timeAttack = saveManager.GetHighScore(GameMode.TimeAttack);
-        var endless = saveManager.GetHighScore(GameMode.Endless);
-        return $"Classic: {classic}\nTime Attack: {timeAttack}\nEndless: {endless}";
+        summary.Text = BuildSummaryText();
     }
 
-    private void StartGame(GameManager gameManager, GameMode mode)
+    private string BuildSummaryText()
     {
-        gameManager.StartNewGame(mode);
+        if (_saveManager == null)
+        {
+            return "No local progress yet.\nPlay a run to create your first save.";
+        }
+
+        var classic = _saveManager.GetHighScore(GameMode.Classic);
+        var timeAttack = _saveManager.GetHighScore(GameMode.TimeAttack);
+        var endless = _saveManager.GetHighScore(GameMode.Endless);
+        var gamesPlayed = _saveManager.SaveData.TotalGamesPlayed;
+        var wins = _saveManager.SaveData.TotalWins;
+        var highestTier = _saveManager.SaveData.HighestTier;
+        var tutorialSeen = _saveManager.SaveData.TutorialSeen ? "Tutorial ready" : "Tutorial pending";
+
+        return $"Best scores\nClassic: {classic}\nTime Attack: {timeAttack}\nEndless: {endless}\n\nRuns: {gamesPlayed} | Wins: {wins}\nHighest tier: {highestTier}\n{tutorialSeen}";
+    }
+
+    private void ResetProgress()
+    {
+        if (_saveManager == null)
+        {
+            return;
+        }
+
+        _saveManager.ResetProgress();
+        UpdateSummary();
+    }
+
+    private void StartGame(GameMode mode)
+    {
+        _gameManager.StartNewGame(mode);
         GetTree().ChangeSceneToFile("res://Scenes/Main.tscn");
     }
 }

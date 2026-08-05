@@ -108,6 +108,12 @@ public sealed class SaveStore
         return SaveData.Settings.TryGetValue(key, out var value) ? value : fallback;
     }
 
+    public void ResetProgress()
+    {
+        SaveData = new SaveData();
+        Save();
+    }
+
     private void EnsureDefaults()
     {
         SaveData.HighScores ??= new Dictionary<string, int>();

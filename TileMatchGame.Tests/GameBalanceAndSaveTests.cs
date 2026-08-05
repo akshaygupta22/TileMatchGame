@@ -61,4 +61,21 @@ public class GameBalanceAndSaveTests
         Assert.Equal(0, saveStore.GetHighScore(GameMode.TimeAttack));
         Assert.False(saveStore.SaveData.TutorialSeen);
     }
+
+    [Fact]
+    public void ResetProgress_ClearsSavedStatsAndTutorialState()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"tilematch-reset-{Guid.NewGuid():N}.json");
+        var saveStore = new SaveStore(tempPath);
+
+        saveStore.RecordRunResult(GameMode.Classic, 2500, 6, true, 12, 15f);
+        saveStore.SetSetting("sound_enabled", false);
+
+        saveStore.ResetProgress();
+
+        Assert.Equal(0, saveStore.GetHighScore(GameMode.Classic));
+        Assert.Equal(1, saveStore.SaveData.HighestTier);
+        Assert.False(saveStore.SaveData.TutorialSeen);
+        Assert.Empty(saveStore.SaveData.Settings);
+    }
 }

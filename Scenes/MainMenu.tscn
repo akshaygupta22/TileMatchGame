@@ -15,11 +15,21 @@ script = ExtResource("1_menu")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 140.0
+offset_top = 48.0
+offset_bottom = 122.0
 theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 text = "Tile Match Game"
+
+[node name="SubtitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 125.0
+offset_bottom = 165.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+text = "Pick a mode to start"
 
 [node name="ButtonList" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -28,36 +38,63 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -110.0
-offset_top = -90.0
-offset_right = 110.0
-offset_bottom = 90.0
-theme_override_constants/separation = 20
+offset_left = -130.0
+offset_top = -132.0
+offset_right = 130.0
+offset_bottom = 140.0
+theme_override_constants/separation = 16
 
 [node name="ClassicButton" type="Button" parent="ButtonList"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 48)
 text = "Classic"
 
 [node name="TimeAttackButton" type="Button" parent="ButtonList"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 48)
 text = "Time Attack"
 
 [node name="EndlessButton" type="Button" parent="ButtonList"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(220, 48)
+custom_minimum_size = Vector2(260, 48)
 text = "Endless"
 
-[node name="SubtitleLabel" type="Label" parent="."]
+[node name="ResetProgressButton" type="Button" parent="ButtonList"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(260, 44)
+text = "Reset Local Progress"
+
+[node name="SummaryPanel" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -170.0
+offset_right = 220.0
+offset_bottom = -24.0
+
+[node name="MarginContainer" type="MarginContainer" parent="SummaryPanel"]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
-offset_top = 145.0
-offset_bottom = 175.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="SummaryLabel" type="Label" parent="SummaryPanel/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 18
-text = "Pick a mode to start"
+vertical_alignment = 1
+text = "Loading local progress..."

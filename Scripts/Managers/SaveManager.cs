@@ -52,4 +52,9 @@ public partial class SaveManager : Node
     {
         return _store.GetSetting(key, fallback);
     }
+
+    public void ResetProgress()
+    {
+        _store.ResetProgress();
+    }
 }
